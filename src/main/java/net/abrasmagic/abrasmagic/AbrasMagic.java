@@ -2,15 +2,24 @@ package net.abrasmagic.abrasmagic;
 import Commands.armorCommand;
 import Commands.magicalGive;
 import Commands.switchSpellsGuiOpen;
+import Utils.DataStore;
+import Utils.PlayerMemory;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.minecraft.server.v1_8_R3.ChatComponentText;
 import net.minecraft.server.v1_8_R3.NBTTagCompound;
+import net.minecraft.server.v1_8_R3.PacketPlayOutChat;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
-import wandEvents.EntityDeath;
+import wandEvents.RandomListeners;
 import wandEvents.GuiEvents;
 import wandEvents.rightClick;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,7 +30,7 @@ public final class AbrasMagic extends JavaPlugin {
     public void onEnable() {
         // Plugin startup logic
         getServer().getPluginManager().registerEvents(new rightClick(),this);
-        getServer().getPluginManager().registerEvents(new EntityDeath(),this);
+        getServer().getPluginManager().registerEvents(new RandomListeners(),this);
         getServer().getPluginManager().registerEvents(new GuiEvents(),this);
         getCommand("magicalgive").setExecutor(new magicalGive());
         getCommand("switchspells").setExecutor(new switchSpellsGuiOpen());
@@ -31,6 +40,18 @@ public final class AbrasMagic extends JavaPlugin {
             @Override
             public void run() {
                 for(Player p: Bukkit.getServer().getOnlinePlayers()){
+
+                    PlayerMemory m = DataStore.getPlayerMemory(p);
+                    PacketPlayOutChat packet = new PacketPlayOutChat(new ChatComponentText((ChatColor.RED+ String.valueOf(m.getHealth())+"❤/"+ m.getMaxHealth()
+                            +"❤  "+ ChatColor.GREEN + m.getHardness() + "ⒽⒶⓇⒹⓃⒺⓈⓈ|"+ChatColor.YELLOW + m.getInvulnerability() + "☭  "+ChatColor.DARK_PURPLE + m.getMana()
+                    )+"✎"), (byte)2);
+                    ((CraftPlayer) p).getHandle().playerConnection.sendPacket(packet);
+                    p.setHealth((m.getHealth()/m.getMaxHealth())*20);
+
+                    DataStore.setPlayerMemory(p,m);
+                    if(m.getHealth()<=0){
+                        p.setHealth(0);
+                    }
                     ItemStack helmet = p.getInventory().getHelmet();
                     ItemStack chestplate = p.getInventory().getChestplate();
                     ItemStack legs = p.getInventory().getLeggings();
@@ -63,5 +84,6 @@ public final class AbrasMagic extends JavaPlugin {
             }
         }, 0L, 1L);
     }
+
 
 }
